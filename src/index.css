@@ -101,6 +101,12 @@ button.btn-red:hover {
   justify-content: center;
 }
 
+/* Mobile Grid Modifier */
+.card-grid.mobile-grid {
+  grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+  gap: 5px;
+}
+
 .card-slot {
   aspect-ratio: 2/3;
   perspective: 1000px;
@@ -147,32 +153,6 @@ button.btn-red:hover {
   text-align: center;
   background-size: cover;
   background-position: center;
-}
-
-/* Single Card View */
-.single-card-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 70vh;
-  width: 100%;
-}
-
-.single-card-wrapper {
-  perspective: 1000px;
-  margin-bottom: 20px;
-  transition: transform 0.3s ease;
-}
-
-.single-card {
-  width: 240px; /* Base size */
-  height: 360px; /* Base size */
-  position: relative;
-  transform-style: preserve-3d;
-  transition: transform 0.6s;
-  border-radius: 12px;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
 }
 
 /* Utility for flipping */
