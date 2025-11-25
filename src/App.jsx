@@ -15,6 +15,9 @@ function App() {
   // activeCardId: instanceId of the card selected on table
   const [activeCardId, setActiveCardId] = useState(null);
 
+  // modalView: null | 'mobile_prompt' | 'donation_info' | 'mobile_denied' | 'other_decks'
+  const [modalView, setModalView] = useState(null);
+
   useEffect(() => {
     setDeck(generateDeck());
   }, []);
@@ -96,6 +99,18 @@ function App() {
   const handleRotate = () => updateActiveCard(c => ({ ...c, rotation: c.rotation + 90 }));
   const handleFlip = () => updateActiveCard(c => ({ ...c, isFlipped: !c.isFlipped }));
 
+  // Modal Handlers
+  const openMobilePrompt = () => setModalView('mobile_prompt');
+  const openDonationInfo = () => setModalView('donation_info');
+  const openMobileDenied = () => setModalView('mobile_denied');
+  const openOtherDecks = () => setModalView('other_decks');
+  const closeModal = () => setModalView(null);
+  
+  const handleReturnToBrowser = () => {
+    closeModal();
+    setViewMode('grid'); // Return to first screen
+  };
+
   if (deck.length === 0) return <div>Загрузка...</div>;
 
   return (
@@ -105,10 +120,16 @@ function App() {
           <h1>Метафорические карты</h1>
           <div className="controls">
             <button onClick={handleShuffle}>Перемешать карты</button>
+            <button onClick={openMobilePrompt}>Мобильная версия</button>
             {drawnCards.length > 0 && (
               <button onClick={() => setViewMode('table')}>Вернуться к столу ({drawnCards.length})</button>
             )}
           </div>
+          
+          <div className="controls" style={{ marginTop: '-10px', marginBottom: '20px' }}>
+            <button className="btn-grey" onClick={openOtherDecks}>Другие колоды</button>
+          </div>
+
           <CardGrid deckContent={deck} onCardClick={handleCardSelectFromGrid} />
         </>
       ) : (
@@ -124,6 +145,62 @@ function App() {
           onRotate={handleRotate}
           onFlip={handleFlip}
         />
+      )}
+
+      {/* Modals */}
+      {modalView === 'mobile_prompt' && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Сделать пожертвование на развитие проекта</h2>
+            <div className="modal-buttons">
+              <button className="btn-grey" onClick={openMobileDenied}>Напомнить позже</button>
+              <button onClick={openDonationInfo}>Пожертвовать</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalView === 'donation_info' && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Благодарю вас за участие в этом проекте!</h2>
+            <p>Вы можете сделать перевод по следующим реквизитам:</p>
+            <p>
+              <a href="https://yoomoney.ru/to/4100117382406268" target="_blank" className="modal-link">
+                https://yoomoney.ru/to/4100117382406268
+              </a>
+            </p>
+            <p>
+              или по номеру телефона по СБП:<br/>
+              <strong>👉 +79222434923 👈</strong> (Сбербанк)
+            </p>
+            <p>
+              После успешного перевода напишите мне в телеграмм:<br/>
+              <a href="https://t.me/golokeshvaradas" target="_blank" className="modal-link">https://t.me/golokeshvaradas</a><br/>
+              чтобы получить секретный ключ к дополнительным возможностям этого приложения.
+            </p>
+            <button onClick={closeModal}>Закрыть</button>
+          </div>
+        </div>
+      )}
+
+      {modalView === 'mobile_denied' && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Мобильная версия доступна только спонсорам</h2>
+            <button onClick={handleReturnToBrowser}>Вернуться к браузерной версии</button>
+          </div>
+        </div>
+      )}
+
+      {modalView === 'other_decks' && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>В разработке</h2>
+            <p>Будет доступна спонсорам проекта</p>
+            <button onClick={handleReturnToBrowser}>Вернуться к выбору карт</button>
+          </div>
+        </div>
       )}
     </div>
   );
