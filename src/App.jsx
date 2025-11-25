@@ -3,33 +3,40 @@ import { generateDeck } from './utils';
 import CardGrid from './components/CardGrid';
 import TableTop from './components/TableTop';
 
+// Deck Configurations
+const DECKS = [
+  { id: 'default', name: 'Основная (120 карт)', path: 'cards', count: 120 },
+  { id: 'resources', name: 'Ресурсы (120 карт)', path: 'cards/resources', count: 120 },
+  { id: 'places', name: 'Ресурсное место (120 карт)', path: 'cards/places', count: 120 },
+];
+
 function App() {
+  // Game State
+  const [currentDeckInfo, setCurrentDeckInfo] = useState(DECKS[0]);
   const [deck, setDeck] = useState([]);
-  
-  // drawnCards: Array of { instanceId, id, ...pos }
-  const [drawnCards, setDrawnCards] = useState([]);
-  
-  // viewMode: 'grid' | 'table'
-  const [viewMode, setViewMode] = useState('grid');
-  
-  // activeCardId: instanceId of the card selected on table
+  const [drawnCards, setDrawnCards] = useState([]); // Array of { instanceId, id, ...pos }
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
   const [activeCardId, setActiveCardId] = useState(null);
 
-  // modalView: null | 'mobile_prompt' | 'donation_info' | 'mobile_denied' | 'sponsor_login' | 'sponsor_success' | 'other_decks'
+  // Modal State
+  // null | 'mobile_prompt' | 'donation_info' | 'mobile_denied' | 'sponsor_login' | 'sponsor_success' | 'other_decks'
   const [modalView, setModalView] = useState(null);
 
-  // New states for sponsor flow
+  // Sponsor / Mobile Mode State
   const [sponsorCode, setSponsorCode] = useState('');
   const [authError, setAuthError] = useState(false);
   const [isSponsor, setIsSponsor] = useState(false);
+  const [isMobileMode, setIsMobileMode] = useState(false);
 
+  // Initialize Deck
   useEffect(() => {
-    setDeck(generateDeck());
-  }, []);
+    // Generate deck based on current selection
+    setDeck(generateDeck(currentDeckInfo.path, currentDeckInfo.count));
+  }, [currentDeckInfo]);
 
+  // Deck Logic
   const handleShuffle = () => {
     const newDeck = [...deck];
-    // Fisher-Yates shuffle
     for (let i = newDeck.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
@@ -37,24 +44,29 @@ function App() {
     setDeck(newDeck);
   };
 
+  const handleSwitchDeck = (deckConfig) => {
+    if (window.confirm('Сменить колоду? Текущий стол будет очищен.')) {
+      setCurrentDeckInfo(deckConfig);
+      setDrawnCards([]); // Clear table
+      setViewMode('grid'); // Go to grid
+      setModalView(null); // Close modal
+    }
+  };
+
+  // Card Selection Logic
   const handleCardSelectFromGrid = (index) => {
-    // Determine card data
     const selectedCard = deck[index];
-    
-    // Remove from deck
     const newDeck = deck.filter((_, i) => i !== index);
     setDeck(newDeck);
 
-    // Create a new instance for the table
-    // We start it in the center of the screen (approx)
     const newCardInstance = {
       ...selectedCard,
-      instanceId: Date.now(), // simple unique ID
-      x: window.innerWidth / 2 - 120, // Center X (minus half width)
-      y: window.innerHeight / 2 - 180, // Center Y (minus half height)
+      instanceId: Date.now(),
+      x: window.innerWidth / 2 - 120,
+      y: window.innerHeight / 2 - 180,
       rotation: 0,
       scale: 1,
-      isFlipped: true, // Auto flip face up when drawn
+      isFlipped: true,
       zIndex: drawnCards.length + 1
     };
 
@@ -63,12 +75,12 @@ function App() {
     setViewMode('table');
   };
 
+  // Table Top Interaction Logic
   const handleActivateCard = (instanceId) => {
     setActiveCardId(instanceId);
-    // Bring to front
     setDrawnCards(prev => prev.map(c => 
       c.instanceId === instanceId 
-        ? { ...c, zIndex: Math.max(...prev.map(p => p.zIndex)) + 1 }
+        ? { ...c, zIndex: Math.max(...prev.map(p => p.zIndex), 0) + 1 }
         : c
     ));
   };
@@ -86,12 +98,13 @@ function App() {
   const handleFinishSession = () => {
     if (window.confirm('Вы уверены, что хотите закончить сеанс? Все карты на столе будут убраны.')) {
       setDrawnCards([]);
-      setDeck(generateDeck());
+      // Regenerate current deck full
+      setDeck(generateDeck(currentDeckInfo.path, currentDeckInfo.count));
       setViewMode('grid');
     }
   };
 
-  // Controls for Active Card
+  // Active Card Controls
   const updateActiveCard = (updater) => {
     if (!activeCardId) return;
     setDrawnCards(prev => prev.map(c => 
@@ -104,7 +117,7 @@ function App() {
   const handleRotate = () => updateActiveCard(c => ({ ...c, rotation: c.rotation + 90 }));
   const handleFlip = () => updateActiveCard(c => ({ ...c, isFlipped: !c.isFlipped }));
 
-  // Modal Handlers
+  // Modal Navigation
   const openMobilePrompt = () => setModalView('mobile_prompt');
   const openDonationInfo = () => setModalView('donation_info');
   const openMobileDenied = () => {
@@ -114,18 +127,20 @@ function App() {
   const openSponsorLogin = () => {
     setSponsorCode('');
     setModalView('sponsor_login');
-  }
+  };
   const openOtherDecks = () => setModalView('other_decks');
   const closeModal = () => setModalView(null);
   
   const handleReturnToBrowser = () => {
     closeModal();
-    setViewMode('grid'); // Return to first screen
+    // Do not reset viewMode here, just close modal
   };
 
+  // Sponsor Logic
   const handleCheckSponsorCode = () => {
     if (sponsorCode === '14057') {
       setIsSponsor(true);
+      setIsMobileMode(true); // Activate Mobile Mode immediately
       setModalView('sponsor_success');
     } else {
       setAuthError(true);
@@ -133,26 +148,47 @@ function App() {
     }
   };
 
-  if (deck.length === 0) return <div>Загрузка...</div>;
+  // Toggle mobile mode manually if sponsor
+  const toggleMobileMode = () => {
+    if (isSponsor) {
+      setIsMobileMode(!isMobileMode);
+    } else {
+      openMobilePrompt();
+    }
+  };
+
+  if (deck.length === 0 && deck.length !== currentDeckInfo.count) {
+    // Simple check if deck is empty but shouldn't be (initial load handled by useEffect)
+    // but deck gets smaller as we pick cards.
+  }
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${isMobileMode ? 'mobile-mode' : ''}`}>
       {viewMode === 'grid' ? (
         <>
-          <h1>Метафорические карты</h1>
+          <h1 style={{ fontSize: isMobileMode ? '1.5rem' : '2rem' }}>
+            {currentDeckInfo.name}
+          </h1>
+          
           <div className="controls">
-            <button onClick={handleShuffle}>Перемешать карты</button>
-            <button onClick={openMobilePrompt}>Мобильная версия</button>
+            <button onClick={handleShuffle}>Перемешать</button>
+            <button onClick={toggleMobileMode}>
+              {isSponsor 
+                ? (isMobileMode ? 'Вернуть ПК вид' : 'Вкл. Мобильный вид') 
+                : 'Мобильная версия'}
+            </button>
             {drawnCards.length > 0 && (
               <button onClick={() => setViewMode('table')}>Вернуться к столу ({drawnCards.length})</button>
             )}
           </div>
           
           <div className="controls" style={{ marginTop: '-10px', marginBottom: '20px' }}>
-            <button className="btn-grey" onClick={openOtherDecks}>Другие колоды</button>
+            <button className="btn-grey" onClick={openOtherDecks}>Выбрать колоду</button>
           </div>
 
-          <CardGrid deckContent={deck} onCardClick={handleCardSelectFromGrid} />
+          <div className={isMobileMode ? 'card-grid mobile-grid' : 'card-grid'}>
+             <CardGrid deckContent={deck} onCardClick={handleCardSelectFromGrid} />
+          </div>
         </>
       ) : (
         <TableTop 
@@ -166,10 +202,13 @@ function App() {
           onZoomOut={handleZoomOut}
           onRotate={handleRotate}
           onFlip={handleFlip}
+          isMobileMode={isMobileMode}
         />
       )}
 
-      {/* Modals */}
+      {/* --- MODALS --- */}
+
+      {/* 1. Mobile Version Prompt */}
       {modalView === 'mobile_prompt' && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -182,6 +221,7 @@ function App() {
         </div>
       )}
 
+      {/* 2. Donation Info */}
       {modalView === 'donation_info' && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -206,6 +246,7 @@ function App() {
         </div>
       )}
 
+      {/* 3. Access Denied / Login Entry */}
       {modalView === 'mobile_denied' && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -214,13 +255,14 @@ function App() {
               <p style={{ color: '#ff4444', fontWeight: 'bold' }}>Код введен неправильно</p>
             )}
             <div className="modal-buttons" style={{ flexDirection: 'column' }}>
-              <button onClick={handleReturnToBrowser} style={{ marginBottom: '10px' }}>Вернуться к браузерной версии</button>
+              <button onClick={closeModal} style={{ marginBottom: '10px' }}>Вернуться к браузерной версии</button>
               <button className="btn-grey" onClick={openSponsorLogin}>Я спонсор</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* 4. Sponsor Login Input */}
       {modalView === 'sponsor_login' && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -251,22 +293,50 @@ function App() {
         </div>
       )}
 
+      {/* 5. Sponsor Success */}
       {modalView === 'sponsor_success' && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h2 style={{ color: '#4caf50' }}>Удачно!</h2>
-            <p>Вы ввели правильный код</p>
-            <button onClick={closeModal}>Закрыть</button>
+            <p>Вы ввели правильный код.</p>
+            <p>Мобильный режим активирован.</p>
+            <button onClick={closeModal}>Начать работу</button>
           </div>
         </div>
       )}
 
+      {/* 6. Deck Selection */}
       {modalView === 'other_decks' && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h2>В разработке</h2>
-            <p>Будет доступна спонсорам проекта</p>
-            <button onClick={handleReturnToBrowser}>Вернуться к выбору карт</button>
+            <h2>Выберите колоду</h2>
+            {isSponsor ? (
+              <div className="deck-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {DECKS.map(d => (
+                  <button 
+                    key={d.id} 
+                    onClick={() => handleSwitchDeck(d)}
+                    className={currentDeckInfo.id === d.id ? '' : 'btn-grey'}
+                  >
+                    {d.name} {currentDeckInfo.id === d.id && '(Текущая)'}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div>
+                <p>Выбор дополнительных колод доступен спонсорам.</p>
+                <div className="modal-buttons">
+                  <button onClick={openMobilePrompt}>Стать спонсором</button>
+                  <button onClick={closeModal} className="btn-grey">Закрыть</button>
+                </div>
+              </div>
+            )}
+            
+            {isSponsor && (
+              <div style={{ marginTop: '20px' }}>
+                <button onClick={closeModal} className="btn-grey">Отмена</button>
+              </div>
+            )}
           </div>
         </div>
       )}
