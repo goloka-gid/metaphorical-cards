@@ -15,8 +15,13 @@ function App() {
   // activeCardId: instanceId of the card selected on table
   const [activeCardId, setActiveCardId] = useState(null);
 
-  // modalView: null | 'mobile_prompt' | 'donation_info' | 'mobile_denied' | 'other_decks'
+  // modalView: null | 'mobile_prompt' | 'donation_info' | 'mobile_denied' | 'sponsor_login' | 'sponsor_success' | 'other_decks'
   const [modalView, setModalView] = useState(null);
+
+  // New states for sponsor flow
+  const [sponsorCode, setSponsorCode] = useState('');
+  const [authError, setAuthError] = useState(false);
+  const [isSponsor, setIsSponsor] = useState(false);
 
   useEffect(() => {
     setDeck(generateDeck());
@@ -102,13 +107,30 @@ function App() {
   // Modal Handlers
   const openMobilePrompt = () => setModalView('mobile_prompt');
   const openDonationInfo = () => setModalView('donation_info');
-  const openMobileDenied = () => setModalView('mobile_denied');
+  const openMobileDenied = () => {
+    setAuthError(false);
+    setModalView('mobile_denied');
+  };
+  const openSponsorLogin = () => {
+    setSponsorCode('');
+    setModalView('sponsor_login');
+  }
   const openOtherDecks = () => setModalView('other_decks');
   const closeModal = () => setModalView(null);
   
   const handleReturnToBrowser = () => {
     closeModal();
     setViewMode('grid'); // Return to first screen
+  };
+
+  const handleCheckSponsorCode = () => {
+    if (sponsorCode === '14057') {
+      setIsSponsor(true);
+      setModalView('sponsor_success');
+    } else {
+      setAuthError(true);
+      setModalView('mobile_denied');
+    }
   };
 
   if (deck.length === 0) return <div>Загрузка...</div>;
@@ -188,7 +210,53 @@ function App() {
         <div className="modal-overlay">
           <div className="modal-content">
             <h2>Мобильная версия доступна только спонсорам</h2>
-            <button onClick={handleReturnToBrowser}>Вернуться к браузерной версии</button>
+            {authError && (
+              <p style={{ color: '#ff4444', fontWeight: 'bold' }}>Код введен неправильно</p>
+            )}
+            <div className="modal-buttons" style={{ flexDirection: 'column' }}>
+              <button onClick={handleReturnToBrowser} style={{ marginBottom: '10px' }}>Вернуться к браузерной версии</button>
+              <button className="btn-grey" onClick={openSponsorLogin}>Я спонсор</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalView === 'sponsor_login' && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Введите спонсорский ключ</h2>
+            <div style={{ marginBottom: '20px' }}>
+              <input 
+                type="text" 
+                maxLength={5}
+                value={sponsorCode}
+                onChange={(e) => setSponsorCode(e.target.value.replace(/\D/g, ''))} // numbers only
+                style={{ 
+                  padding: '10px', 
+                  fontSize: '1.2rem', 
+                  textAlign: 'center', 
+                  borderRadius: '8px',
+                  border: '1px solid #646cff',
+                  background: '#333',
+                  color: 'white',
+                  width: '150px'
+                }}
+              />
+            </div>
+            <div className="modal-buttons">
+              <button onClick={() => setModalView('mobile_denied')} className="btn-grey">Назад</button>
+              <button onClick={handleCheckSponsorCode}>Войти</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalView === 'sponsor_success' && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2 style={{ color: '#4caf50' }}>Удачно!</h2>
+            <p>Вы ввели правильный код</p>
+            <button onClick={closeModal}>Закрыть</button>
           </div>
         </div>
       )}
