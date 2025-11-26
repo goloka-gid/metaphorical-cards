@@ -8,6 +8,7 @@ const DECKS = [
   { id: 'default', name: 'Основная (120 карт)', path: 'cards', count: 120 },
   { id: 'resources', name: 'Ресурсы (120 карт)', path: 'cards/resources', count: 120 },
   { id: 'places', name: 'Ресурсное место (120 карт)', path: 'cards/places', count: 120 },
+  { id: 'faces', name: 'Лица (120 карт)', path: 'cards/faces', count: 120 },
 ];
 
 function App() {
