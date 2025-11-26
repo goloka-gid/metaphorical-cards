@@ -1,8 +1,9 @@
 import React from 'react';
 
 const CardGrid = ({ deckContent, onCardClick }) => {
+  // Use a fragment to return just the items, so the parent can manage the grid container class
   return (
-    <div className="card-grid">
+    <>
       {deckContent.map((card, index) => (
         <div 
           key={index} 
@@ -17,7 +18,7 @@ const CardGrid = ({ deckContent, onCardClick }) => {
           </div>
         </div>
       ))}
-    </div>
+    </>
   );
 };
 
