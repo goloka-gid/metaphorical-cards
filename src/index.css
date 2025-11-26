@@ -103,8 +103,9 @@ button.btn-red:hover {
 
 /* Mobile Grid Modifier */
 .card-grid.mobile-grid {
-  grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-  gap: 5px;
+  /* Force 4 columns on mobile, regardless of screen width. This makes them small. */
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
 }
 
 .card-slot {
@@ -142,6 +143,12 @@ button.btn-red:hover {
   color: white;
   font-size: 1.5rem;
   border: 2px solid #646cff;
+}
+
+/* Smaller font for mobile grid numbers if needed, handled via scaling usually */
+.card-grid.mobile-grid .card-back {
+  font-size: 1rem;
+  border-width: 1px;
 }
 
 .card-front {
