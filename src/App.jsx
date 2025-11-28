@@ -20,6 +20,9 @@ function App() {
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
   const [activeCardId, setActiveCardId] = useState(null);
 
+  // New state for flipping all cards in grid view
+  const [isAllFlipped, setIsAllFlipped] = useState(false);
+
   // Modal State
   // null | 'mobile_prompt' | 'donation_info' | 'mobile_denied' | 'sponsor_login' | 'sponsor_success' | 'other_decks'
   const [modalView, setModalView] = useState(null);
@@ -34,6 +37,8 @@ function App() {
   useEffect(() => {
     // Generate deck based on current selection
     setDeck(generateDeck(currentDeckInfo.path, currentDeckInfo.count));
+    // Reset flip state when deck changes
+    setIsAllFlipped(false);
   }, [currentDeckInfo]);
 
   // Deck Logic
@@ -44,6 +49,11 @@ function App() {
       [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
     }
     setDeck(newDeck);
+    setIsAllFlipped(false); // Reset flip on shuffle
+  };
+
+  const toggleAllFlip = () => {
+    setIsAllFlipped(!isAllFlipped);
   };
 
   const handleSwitchDeck = (deckConfig) => {
@@ -68,7 +78,7 @@ function App() {
       y: window.innerHeight / 2 - 180,
       rotation: 0,
       scale: 1,
-      isFlipped: true,
+      isFlipped: true, // Auto flip face up when drawn
       zIndex: drawnCards.length + 1
     };
 
@@ -103,6 +113,7 @@ function App() {
       // Regenerate current deck full
       setDeck(generateDeck(currentDeckInfo.path, currentDeckInfo.count));
       setViewMode('grid');
+      setIsAllFlipped(false);
     }
   };
 
@@ -175,6 +186,9 @@ function App() {
           
           <div className="controls">
             <button onClick={handleShuffle}>Перемешать</button>
+            <button onClick={toggleAllFlip}>
+              {isAllFlipped ? 'Скрыть карты' : 'Открыть все карты'}
+            </button>
             <button onClick={toggleMobileMode}>
               {isSponsor 
                 ? (isMobileMode ? 'Вернуть ПК вид' : 'Вкл. Мобильный вид') 
@@ -190,7 +204,11 @@ function App() {
           </div>
 
           <div className={isMobileMode ? 'card-grid mobile-grid' : 'card-grid'}>
-             <CardGrid deckContent={deck} onCardClick={handleCardSelectFromGrid} />
+             <CardGrid 
+               deckContent={deck} 
+               onCardClick={handleCardSelectFromGrid} 
+               isAllFlipped={isAllFlipped}
+             />
           </div>
         </>
       ) : (
