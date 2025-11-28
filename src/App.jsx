@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { generateDeck } from './utils';
 import CardGrid from './components/CardGrid';
 import TableTop from './components/TableTop';
+import { SPONSOR_CODES } from './sponsorCodes';
 
 // Deck Configurations
 const DECKS = [
@@ -139,7 +140,8 @@ function App() {
 
   // Sponsor Logic
   const handleCheckSponsorCode = () => {
-    if (sponsorCode === '14057') {
+    // Check against the imported list of valid codes
+    if (SPONSOR_CODES.includes(sponsorCode)) {
       setIsSponsor(true);
       setIsMobileMode(true); // Activate Mobile Mode immediately
       setModalView('sponsor_success');
