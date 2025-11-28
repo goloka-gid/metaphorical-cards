@@ -1,7 +1,6 @@
 import React from 'react';
 
-const CardGrid = ({ deckContent, onCardClick }) => {
-  // Use a fragment to return just the items, so the parent can manage the grid container class
+const CardGrid = ({ deckContent, onCardClick, isAllFlipped }) => {
   return (
     <>
       {deckContent.map((card, index) => (
@@ -10,11 +9,19 @@ const CardGrid = ({ deckContent, onCardClick }) => {
           className="card-slot" 
           onClick={() => onCardClick(index)}
         >
-          <div className="card">
+          <div className={`card ${isAllFlipped ? 'flipped' : ''}`}>
+            {/* BACK (Face Down) */}
             <div className="card-face card-back">
               {index + 1}
             </div>
-            {/* Front is hidden in grid view */}
+            
+            {/* FRONT (Face Up) */}
+            <div 
+              className="card-face card-front"
+              style={{ backgroundImage: `url(${card.imageUrl})` }}
+            >
+              {!card.imageUrl && card.content}
+            </div>
           </div>
         </div>
       ))}
